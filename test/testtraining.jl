@@ -6,21 +6,19 @@ include("./imports.jl")
     learner = testlearner(coeff = 3)
     fit!(learner, repeat([TrainingPhase()], 5))
     @test  learner.model.coeff[1] ≈ 3 atol = 0.1
-    @test learner.state.phase isa TrainingPhase
+    #@test learner.state.phase isa TrainingPhase
 end
 
 
 @testset ExtendedTestSet "Recorder" begin
-    learner = testlearner(coeff = 3)
-    h = learner.state.history
-    @test h.epochs == 0
-    @test h.nsteps == 0
+    learner = testlearner(coeff = 3, callbacks=[Recorder(), AverageLoss()])
     fit!(learner, 10)
+    h = learner.cbstate[:history]
     @test h.epochs == 10
     @test h.nstepsepoch == length(getdataloader(TrainingPhase(), learner))
     @test h.nsteps == 10 * length(getdataloader(TrainingPhase(), learner))
 
-    idxs, losses = get(h.epochmetrics[ValidationPhase()], :loss)
+    idxs, losses = get(h.epochmetrics[ValidationPhase()], Symbol("Loss()"))
 
     @test losses[1] > losses[end]
 end
